@@ -1,0 +1,11 @@
+# 智能选股平台 - 后端
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+pydantic==2.6.1
+pydantic-settings==2.1.0
+akshare>=1.12.0
+redis==5.0.1
+apscheduler==3.10.4
+sqlalchemy==2.0.27
+python-dotenv==1.0.1
+pandas==2.2.0
