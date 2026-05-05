@@ -102,3 +102,10 @@ class ScheduleConfig(BaseModel):
     minute: int = 0
     weekdays: List[int] = [0, 1, 2, 3, 4]  # 周一到周五
     notify_feishu: bool = True
+
+
+class ScoringWeights(BaseModel):
+    """评分权重配置（总和需=100）"""
+    fundamental: float = 50.0
+    technical: float = 30.0
+    capital: float = 20.0

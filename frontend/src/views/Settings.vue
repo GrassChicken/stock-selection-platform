@@ -2,7 +2,7 @@
   <div class="settings">
     <h2>⚙️ 系统设置</h2>
     <el-row :gutter="24">
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <el-card shadow="hover" style="border-radius: 12px">
           <template #header>⏰ 定时分析设置</template>
           <el-form label-width="120px">
@@ -25,14 +25,15 @@
               <el-checkbox v-model="schedule.notify_feishu">飞书消息</el-checkbox>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="saveSchedule">保存设置</el-button>
+              <el-button type="primary" @click="saveSchedule" :loading="saving">保存设置</el-button>
             </el-form-item>
           </el-form>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :md="12">
         <el-card shadow="hover" style="border-radius: 12px">
           <template #header>📊 评分权重配置</template>
+          <el-alert v-if="weightTotal !== 100" :title="`权重总和 ${weightTotal}%，必须等于100%`" type="warning" show-icon :closable="false" style="margin-bottom: 16px" />
           <el-form label-width="100px">
             <el-form-item label="基本面">
               <el-slider v-model="weights.fundamental" :max="100" show-input />
@@ -44,7 +45,7 @@
               <el-slider v-model="weights.capital" :max="100" show-input />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="saveWeights">保存权重</el-button>
+              <el-button type="primary" @click="saveWeights" :loading="saving" :disabled="weightTotal !== 100">保存权重</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -65,8 +66,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getSchedule, saveSchedule as apiSaveSchedule, getWeights, saveWeights as apiSaveWeights } from '../api/settings'
 
 const schedule = ref({
   enabled: true,
@@ -76,6 +78,7 @@ const schedule = ref({
   notify_feishu: true,
 })
 const scheduleTime = ref(new Date(2026, 0, 1, 16, 0))
+const saving = ref(false)
 
 const weights = ref({
   fundamental: 50,
@@ -83,13 +86,51 @@ const weights = ref({
   capital: 20,
 })
 
-const saveSchedule = () => {
-  ElMessage.success('定时设置已保存 ✅')
+const weightTotal = computed(() =>
+  Math.round((weights.value.fundamental + weights.value.technical + weights.value.capital) * 10) / 10
+)
+
+const saveSchedule = async () => {
+  saving.value = true
+  try {
+    const h = scheduleTime.value.getHours()
+    const m = scheduleTime.value.getMinutes()
+    await apiSaveSchedule({ ...schedule.value, hour: h, minute: m })
+    ElMessage.success('定时设置已保存 ✅')
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    saving.value = false
+  }
 }
 
-const saveWeights = () => {
-  ElMessage.success('权重配置已保存 ✅')
+const saveWeights = async () => {
+  if (weightTotal.value !== 100) {
+    ElMessage.warning('权重总和必须等于100%')
+    return
+  }
+  saving.value = true
+  try {
+    await apiSaveWeights(weights.value)
+    ElMessage.success('权重配置已保存 ✅')
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    saving.value = false
+  }
 }
+
+onMounted(async () => {
+  try {
+    const s = await getSchedule()
+    schedule.value = s
+    scheduleTime.value = new Date(2026, 0, 1, s.hour || 16, s.minute || 0)
+  } catch {}
+  try {
+    const w = await getWeights()
+    weights.value = w
+  } catch {}
+})
 </script>
 
 <style scoped>
