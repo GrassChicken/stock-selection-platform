@@ -144,7 +144,7 @@
         <el-table-column prop="rating" label="评级" width="70">
           <template #default="{ row }"><el-tag :type="row.rating === 'A+' ? 'danger' : row.rating === 'A' ? 'warning' : 'info'" size="small" effect="plain">{{ row.rating }}</el-tag></template>
         </el-table-column>
-        <el-table-column label="操作" width="80"><template #default><el-button size="small" type="primary" link>详情</el-button></template></el-table-column>
+        <el-table-column label="操作" width="80"><template #default="{ row }"><el-button size="small" type="primary" link @click="viewDetail(row)">详情</el-button></template></el-table-column>
       </el-table>
 
       <div class="stock-cards-mobile">
@@ -214,6 +214,7 @@ export default {
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useDashboardStore } from '../stores/dashboard'
 import {
@@ -223,6 +224,7 @@ import {
 } from '@element-plus/icons-vue'
 
 const store = useDashboardStore()
+const router = useRouter()
 const selectedSector = ref('')
 const activeBoard = ref('main')
 const boardLabels = { main: '主板', chinext: '创业板', star: '科创板' }
@@ -277,6 +279,7 @@ const triggerAnalysis = async () => {
   }
 }
 const switchBoard = (b) => { activeBoard.value = b }
+const viewDetail = (row) => { router.push({ name: 'StockDetail', params: { code: row.code } }) }
 onMounted(() => store.fetchDashboard())
 </script>
 
