@@ -119,6 +119,18 @@
         </el-table-column>
         <el-table-column prop="code" label="代码" width="90" />
         <el-table-column prop="name" label="名称" width="100" />
+        <el-table-column label="板块" width="80">
+          <template #default="{ row }">
+            <el-tag size="small" type="primary" effect="plain">{{ row._sector }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="类别" width="80">
+          <template #default="{ row }">
+            <el-tag size="small" :type="boardTagType[row._board] || 'info'" effect="dark">
+              {{ boardLabelMap[row._board] || '其他' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="price" label="现价" width="90">
           <template #default="{ row }"><span :class="row.change_pct >= 0 ? 'up' : 'down'">¥{{ row.price?.toFixed(2) }}</span></template>
         </el-table-column>
@@ -140,6 +152,12 @@
             <span :class="['stock-rank', `rank-${stock.rank}`]">{{ stock.rank }}</span>
             <span class="stock-code">{{ stock.code }}</span>
             <span class="stock-name">{{ stock.name }}</span>
+            <el-tag size="small" :type="boardTagType[stock._board] || 'info'" effect="dark" class="board-tag">
+              {{ boardLabelMap[stock._board] || '其他' }}
+            </el-tag>
+          </div>
+          <div class="stock-meta">
+            <el-tag size="small" type="primary" effect="plain">{{ stock._sector }}</el-tag>
           </div>
           <div class="stock-body">
             <div class="stock-price">
@@ -206,12 +224,36 @@ const store = useDashboardStore()
 const selectedSector = ref('')
 const activeBoard = ref('main')
 const boardLabels = { main: '主板', chinext: '创业板', star: '科创板' }
+const boardLabelMap = { main: '主板', chinext: '创业板', star: '科创板' }
 const customColors = [{ color: '#409eff', percentage: 33 }, { color: '#e6a23c', percentage: 66 }, { color: '#67c23a', percentage: 100 }]
 const boardSectors = computed(() => store.boardSectors[activeBoard.value] || [])
 const boardStats = computed(() => store.boardStats[activeBoard.value] || {})
+
+// 按股票代码判断所属类别
+const getBoard = (code) => {
+  if (!code) return 'other'
+  if (code.startsWith('60') || code.startsWith('00')) return 'main'
+  if (code.startsWith('30')) return 'chinext'
+  if (code.startsWith('68')) return 'star'
+  return 'other'
+}
+const boardTagType = { main: 'danger', chinext: 'warning', star: '', other: 'info' }
+
 const stockList = computed(() => {
+  // 按选中的板块过滤
+  const target = selectedSector.value
+  const sectors = target ? boardSectors.value.filter(s => s.name === target) : boardSectors.value
   const r = []
-  for (const s of boardSectors.value) if (s.stocks) s.stocks.forEach((x, i) => r.push({ rank: i + 1, ...x }))
+  for (const s of sectors) {
+    if (s.stocks) {
+      s.stocks.forEach((x, i) => r.push({
+        rank: i + 1,
+        ...x,
+        _sector: s.name,
+        _board: getBoard(x.code),
+      }))
+    }
+  }
   return r
 })
 const tableRowClassName = ({ rowIndex }) => rowIndex < 3 ? 'top-row' : ''
@@ -276,6 +318,7 @@ onMounted(() => store.fetchDashboard())
 
 .stock-table { display: block; }
 .stock-cards-mobile { display: none; }
+.board-tag { margin-left: auto; }
 
 .stats-bar { margin-top: 20px; }
 .stat-card { text-align: center; border-radius: 12px; padding: 16px 8px; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; }
@@ -304,6 +347,8 @@ onMounted(() => store.fetchDashboard())
   .stock-card-mobile { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
   .stock-card-mobile:active { background: #fafafa; } .stock-card-mobile:last-child { border-bottom: none; }
   .stock-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .stock-meta { margin-bottom: 6px; }
+  .board-tag { margin-left: auto; }
   .stock-rank { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; background: #f5f7fa; color: #909399; }
   .stock-rank.rank-1 { background: linear-gradient(135deg,#ffd700,#ffb300) !important; color: #fff !important; }
   .stock-rank.rank-2 { background: linear-gradient(135deg,#c0c0c0,#a0a0a0) !important; color: #fff !important; }
