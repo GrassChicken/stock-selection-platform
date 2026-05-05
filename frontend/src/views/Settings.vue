@@ -1,6 +1,12 @@
 <template>
   <div class="settings">
-    <h2>⚙️ 系统设置</h2>
+    <div class="settings-header">
+      <el-button class="back-btn" @click="$router.push('/')">
+        <el-icon><ArrowLeft /></el-icon>
+        返回
+      </el-button>
+      <h2>⚙️ 系统设置</h2>
+    </div>
     <el-row :gutter="24">
       <el-col :xs="24" :md="12">
         <el-card shadow="hover" style="border-radius: 12px">
@@ -68,6 +74,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { getSchedule, saveSchedule as apiSaveSchedule, getWeights, saveWeights as apiSaveWeights } from '../api/settings'
 
 const schedule = ref({
@@ -135,5 +142,7 @@ onMounted(async () => {
 
 <style scoped>
 .settings { max-width: 1200px; margin: 0 auto; }
-.settings h2 { margin-bottom: 20px; font-size: 22px; }
+.settings-header { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.settings-header h2 { margin: 0; font-size: 22px; }
+.back-btn { display: flex; align-items: center; gap: 4px; }
 </style>
