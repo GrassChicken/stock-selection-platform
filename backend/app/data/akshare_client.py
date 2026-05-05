@@ -89,15 +89,33 @@ def get_sector_stocks(sector_name: str) -> pd.DataFrame:
 
 
 def get_market_overview() -> dict:
-    """获取大盘指数概况"""
+    """获取大盘指数概况（上证+深证+创业板）"""
+    result = {}
     try:
+        # 上证指数（从东方财富指数列表获取，快速）
         df = ak.stock_zh_index_spot_em()
-        result = {}
-        # 提取上证/深证/创业板
         for _, row in df.iterrows():
-            name = row.get("名称", "")
-            if name in ("上证指数", "深证成指", "创业板指"):
-                result[name] = row.to_dict()
-        return result
+            if row.get("名称") == "上证指数":
+                result["上证指数"] = row.to_dict()
+                break
     except Exception:
-        return {}
+        pass
+
+    # 深证成指 + 创业板指（逐条拉取，轻量）
+    for code, name in [("399001", "深证成指"), ("399006", "创业板指")]:
+        try:
+            df = ak.stock_zh_index_daily(symbol=f"sz{code}")
+            if df is not None and not df.empty:
+                latest = df.iloc[-1]
+                prev = df.iloc[-2] if len(df) > 1 else latest
+                change_pct = round(
+                    (latest["close"] - prev["close"]) / prev["close"] * 100, 2
+                ) if prev["close"] != 0 else 0
+                result[name] = {
+                    "最新价": round(latest["close"], 2),
+                    "涨跌幅": change_pct,
+                }
+        except Exception:
+            pass
+
+    return result
