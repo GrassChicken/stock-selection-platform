@@ -44,8 +44,15 @@ def get_stock_kline(code: str, period: str = "daily", days: int = 120) -> pd.Dat
     """获取个股日 K 线数据 (用于计算技术指标)"""
     try:
         df = ak.stock_zh_a_hist(symbol=code, period=period, adjust="qfq")
+        if df is None or df.empty:
+            return pd.DataFrame()
         # 只保留最近 N 天
         df = df.tail(days).copy()
+        # 列名统一映射为英文，方便评分引擎使用
+        col_map = {'开盘': 'open', '收盘': 'close', '最高': 'high',
+                   '最低': 'low', '成交量': 'volume', '成交额': 'turnover',
+                   '涨跌幅': 'change_pct', '换手率': 'turnover_rate'}
+        df = df.rename(columns=col_map)
         return df
     except Exception:
         return pd.DataFrame()

@@ -1,5 +1,6 @@
 """完整分析流程 — L1过滤 → L2评分 → 板块分组"""
 import time
+import numpy as np
 import pandas as pd
 from app.data.akshare_client import (
     get_stock_list, get_stock_basic_info, get_stock_kline,
@@ -8,6 +9,25 @@ from app.data.akshare_client import (
 from app.engine.l1_filter import filter_stocks
 from app.engine.l2_scorer import grade_stock
 from app.engine.sector_heat import assign_sector, group_by_sector
+
+
+def _clean(obj):
+    """递归转换 numpy/pandas 类型为 Python 原生类型"""
+    if obj is None:
+        return None
+    if isinstance(obj, (np.bool_, np.integer)):
+        return int(obj) if isinstance(obj, np.integer) else bool(obj)
+    if isinstance(obj, np.floating):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: _clean(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_clean(x) for x in obj]
+    if isinstance(obj, pd.DataFrame):
+        return obj.to_dict(orient='records')
+    return obj
 
 
 def run_full_analysis(progress_callback=None) -> dict:
@@ -118,8 +138,8 @@ def run_full_analysis(progress_callback=None) -> dict:
         'C': sum(1 for s in scored if s['rating'] == 'C'),
     }
 
-    return {
+    return _clean({
         'sectors': sectors,
         'stats': stats,
         'elapsed': round(elapsed, 1),
-    }
+    })
