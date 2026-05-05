@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     LLM_API_KEY: str = ""
     LLM_BASE_URL: str = ""
     LLM_MODEL: str = ""
+    FEISHU_WEBHOOK: str = ""
 
     class Config:
         env_file = ".env"
