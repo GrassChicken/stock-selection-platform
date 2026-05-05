@@ -45,11 +45,32 @@ def _parse_val(v) -> float:
 
 
 def _map_fund(raw: dict) -> dict:
-    """AKShare 中文财务 → 评分引擎英文格式"""
+    """AKShare 中文财务 → 评分引擎英文格式
+    
+    同花顺财务摘要的 ROE 是"加权净资产收益率"，已是年度化可比数据，
+    但 Q1/Q3 累计值仍需年化。简化处理：根据报告期季度数估算年化。
+    """
+    report_date = raw.get('报告期', '')
+    quarter = 4  # 默认按年度
+    if isinstance(report_date, str) and len(report_date) >= 7:
+        month = int(report_date[5:7])
+        if month <= 3:
+            quarter = 1
+        elif month <= 6:
+            quarter = 2
+        elif month <= 9:
+            quarter = 3
+    
+    annualize = 4 / quarter if quarter < 4 else 1  # Q1=4x, Q2=2x, Q3=1.33x, Q4=1x
+    
     result = {}
-    for cn, en in _FIN_MAP.items():
-        result[en] = _parse_val(raw.get(cn, 0))
-    result['has_dividend'] = result.get('eps', 0) > 0
+    result['roe'] = _parse_val(raw.get('净资产收益率', 0)) * annualize
+    result['profit_growth'] = _parse_val(raw.get('净利润同比增长率', 0))
+    result['revenue_growth'] = _parse_val(raw.get('营业总收入同比增长率', 0))
+    result['gross_margin'] = _parse_val(raw.get('销售毛利率', 0))
+    result['debt_ratio'] = _parse_val(raw.get('资产负债率', 0))
+    result['operating_cashflow'] = _parse_val(raw.get('每股经营现金流', 0)) * annualize
+    result['has_dividend'] = _parse_val(raw.get('基本每股收益', 0)) > 0
     result['pe_percentile'] = 50
     return result
 
