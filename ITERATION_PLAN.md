@@ -30,9 +30,29 @@
 - [x] 后端重启成功，所有 API 返回 200
 - [x] `/api/analyze` 手动触发跑通 (前100只股票)
 
----
+### M2: 后端 API 接入真实引擎 ✅
+- [x] M2.1 `/api/dashboard` 三大指数 + 涨跌家数 + 成交额 + 板块
+- [x] M2.2 `/api/stocks/{code}` 实时评分 + K线 + 买卖点
+- [x] M2.3 `/api/sectors` 板块列表 + 股票详情
+- [x] M2.4 `/api/sectors/{name}/stocks` 指定板块股票
+- [x] pipeline 财务字段映射 (`_map_fund`)
 
-### M2: 后端 API 接入真实引擎 🔴 下一步
+### M3: AKShare 财务数据适配 🟡
+- [x] K线列名映射 (中文→英文)
+- [x] 财务字段映射函数 (`_map_fund` / `_parse_val`)
+- [ ] 评分引擎阈值优化 (单季度→年化)
+- [ ] 全量评分 (当前仅100只)
+
+### M4: 前端状态层 + API 封装 ✅
+- [x] Axios 请求封装
+- [x] Pinia 状态管理 (dashboard store)
+- [x] Dashboard.vue 接入真实数据
+- [x] 前端构建成功
+
+### M5: 前端组件开发 🟡
+- [ ] 个股详情抽屉
+- [ ] ECharts 图表组件
+- [ ] 分析进度组件
 
 **目标**: 所有 API 接口返回真实引擎数据，不再返回 mock
 
