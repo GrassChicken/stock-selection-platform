@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
+import os
 
 from app.config import get_settings
 from app.api import dashboard, sectors, stocks, analyze, schedule
@@ -46,3 +49,26 @@ app.include_router(schedule.router, prefix="/api/schedule", tags=["定时任务"
 @app.get("/api/health", tags=["健康检查"])
 async def health_check():
     return {"status": "ok", "message": "智能选股平台运行中 🦐"}
+
+
+# 挂载前端静态文件
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "frontend", "dist")
+if os.path.exists(FRONTEND_DIST):
+    # 挂载静态资源 (JS/CSS/Images)
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+    
+    # SPA 回退路由：非 /api 请求返回 index.html
+    from fastapi.responses import HTMLResponse
+    
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str):
+        if full_path.startswith("api"):
+            raise HTTPException(status_code=404)
+        file_path = os.path.join(FRONTEND_DIST, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))
+    
+    print(f"📁 前端静态文件已挂载: {FRONTEND_DIST}")
+else:
+    print(f"⚠️  前端静态文件目录不存在: {FRONTEND_DIST}")

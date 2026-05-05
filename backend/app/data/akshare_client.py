@@ -5,73 +5,99 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-# 股票列表缓存
-_stock_list_cache = None
-
 
 def get_stock_list() -> pd.DataFrame:
-    """获取 A 股全部股票实时行情 (带缓存)"""
-    global _stock_list_cache
-    if _stock_list_cache is not None:
-        return _stock_list_cache
-
-    df = ak.stock_zh_a_spot_em()
-    # 只保留需要的列
-    keep_cols = {
-        '代码': 'code', '名称': 'name', '最新价': 'price',
-        '涨跌幅': 'change_pct', '涨跌额': 'change',
-        '成交量': 'volume', '成交额': 'turnover',
-        '振幅': 'amplitude', '最高': 'high', '最低': 'low',
-        '今开': 'open', '昨收': 'pre_close',
-        '量比': 'vol_ratio', '换手率': 'turnover_rate',
-        '市盈率-动态': 'pe', '市净率': 'pb',
-        '总市值': 'total_mv', '流通市值': 'circ_mv',
-    }
-    df = df.rename(columns={k: v for k, v in keep_cols.items() if k in df.columns})
-    df = df[list(keep_cols.values())]
-    # 数值转换
-    for col in ['price', 'change_pct', 'pe', 'pb', 'vol_ratio', 'turnover_rate']:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-    _stock_list_cache = df
-    return df
+    """获取 A 股全部股票实时行情 (东方财富接口)"""
+    try:
+        df = ak.stock_zh_a_spot_em()
+        return df
+    except Exception as e:
+        print(f"⚠️ 获取股票列表失败: {e}")
+        return pd.DataFrame()
 
 
-def get_stock_info(code: str) -> dict:
-    """获取个股基本信息"""
-    info = ak.stock_individual_info_em(symbol=code)
-    result = {}
-    for _, row in info.iterrows():
-        result[row['item']] = row['value']
-    return result
+def get_stock_basic_info(code: str) -> dict:
+    """获取个股基本信息 (行业/市值/上市时间等)"""
+    try:
+        info = ak.stock_individual_info_em(symbol=code)
+        result = {}
+        for _, row in info.iterrows():
+            result[row['item']] = row['value']
+        return result
+    except Exception:
+        return {}
 
 
-def get_financial_data(code: str) -> dict:
-    """获取财务指标 (ROE/毛利率/净利率/资产负债率等)"""
+def get_stock_financials(code: str) -> dict:
+    """获取财务摘要 (ROE/毛利率/净利率/资产负债率等)"""
     try:
         df = ak.stock_financial_abstract_ths(symbol=code)
         if df is not None and len(df) > 0:
-            return df.iloc[-1].to_dict()
+            latest = df.iloc[-1].to_dict()
+            return latest
     except Exception:
         pass
     return {}
 
 
-def get_technical_indicators(code: str, period: str = 'daily') -> pd.DataFrame:
-    """获取日线行情数据 (用于计算均线/MACD/RSI/BOLL)"""
+def get_stock_kline(code: str, period: str = "daily", days: int = 120) -> pd.DataFrame:
+    """获取个股日 K 线数据 (用于计算技术指标)"""
     try:
-        df = ak.stock_zh_a_hist(symbol=code, period=period, adjust='qfq')
+        df = ak.stock_zh_a_hist(symbol=code, period=period, adjust="qfq")
+        # 只保留最近 N 天
+        df = df.tail(days).copy()
         return df
     except Exception:
         return pd.DataFrame()
 
 
-def get_capital_flow(code: str) -> dict:
-    """获取资金流向"""
+def get_stock_fund_flow(code: str) -> dict:
+    """获取个股资金流向 (东方财富)"""
     try:
-        df = ak.stock_individual_fund_flow(stock=code, market='sh')
+        # 获取个股资金流历史
+        df = ak.stock_individual_fund_flow(stock=code, market="sh")
         if df is not None and len(df) > 0:
             return df.iloc[-1].to_dict()
     except Exception:
-        pass
+        # 尝试深市
+        try:
+            df = ak.stock_individual_fund_flow(stock=code, market="sz")
+            if df is not None and len(df) > 0:
+                return df.iloc[-1].to_dict()
+        except Exception:
+            pass
     return {}
+
+
+def get_sector_list() -> dict:
+    """获取板块列表"""
+    try:
+        # 东方财富行业板块
+        df = ak.stock_board_industry_name_em()
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+
+def get_sector_stocks(sector_name: str) -> pd.DataFrame:
+    """获取某板块的成分股"""
+    try:
+        df = ak.stock_board_industry_cons_em(symbol=sector_name)
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+
+def get_market_overview() -> dict:
+    """获取大盘指数概况"""
+    try:
+        df = ak.stock_zh_index_spot_em()
+        result = {}
+        # 提取上证/深证/创业板
+        for _, row in df.iterrows():
+            name = row.get("名称", "")
+            if name in ("上证指数", "深证成指", "创业板指"):
+                result[name] = row.to_dict()
+        return result
+    except Exception:
+        return {}

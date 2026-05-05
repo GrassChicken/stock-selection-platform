@@ -6,7 +6,7 @@ from datetime import datetime
 router = APIRouter()
 
 
-@router.get("/", response_model=DashboardData)
+@router.get("", response_model=DashboardData)
 async def get_dashboard():
     """获取首页大盘数据 + 板块热度 + 统计信息"""
     # TODO: 实现真实数据获取

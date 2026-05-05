@@ -6,7 +6,7 @@ from app.models import SectorInfo, StockScore
 router = APIRouter()
 
 
-@router.get("/", response_model=List[SectorInfo])
+@router.get("", response_model=List[SectorInfo])
 async def get_sectors():
     """获取所有板块列表及热度排名"""
     # TODO: 实现真实数据
