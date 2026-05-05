@@ -1,4 +1,5 @@
 """完整分析流程 — L1过滤 → L2评分 → 板块分组"""
+import re
 import time
 import numpy as np
 import pandas as pd
@@ -9,6 +10,48 @@ from app.data.akshare_client import (
 from app.engine.l1_filter import filter_stocks
 from app.engine.l2_scorer import grade_stock
 from app.engine.sector_heat import assign_sector, group_by_sector
+
+
+# ========== 财务字段映射 ==========
+_FIN_MAP = {
+    '净资产收益率': 'roe',
+    '净利润同比增长率': 'profit_growth',
+    '营业总收入同比增长率': 'revenue_growth',
+    '销售毛利率': 'gross_margin',
+    '资产负债率': 'debt_ratio',
+    '每股经营现金流': 'operating_cashflow',
+    '基本每股收益': 'eps',
+}
+
+
+def _parse_val(v) -> float:
+    if isinstance(v, (int, float, np.number)):
+        return float(v)
+    if v is None:
+        return 0.0
+    s = str(v).strip()
+    m = re.search(r'([\d.]+)%', s)
+    if m:
+        return float(m.group(1))
+    m = re.search(r'([\d.]+)', s)
+    if m:
+        val = float(m.group(1))
+        if '亿' in s:
+            val *= 1e8
+        elif '万' in s:
+            val *= 1e4
+        return val
+    return 0.0
+
+
+def _map_fund(raw: dict) -> dict:
+    """AKShare 中文财务 → 评分引擎英文格式"""
+    result = {}
+    for cn, en in _FIN_MAP.items():
+        result[en] = _parse_val(raw.get(cn, 0))
+    result['has_dividend'] = result.get('eps', 0) > 0
+    result['pe_percentile'] = 50
+    return result
 
 
 def _clean(obj):
@@ -91,8 +134,9 @@ def run_full_analysis(progress_callback=None) -> dict:
         # K线数据
         kline = get_stock_kline(code, days=120)
 
-        # 财务数据
-        fund = get_stock_financials(code)
+        # 财务数据 + 字段映射
+        raw_fund = get_stock_financials(code)
+        fund = _map_fund(raw_fund)
 
         # 行业 + 板块
         info = get_stock_basic_info(code)

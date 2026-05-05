@@ -37,16 +37,29 @@ def _parse_value(v) -> float:
 
 
 def _map_financials(raw: dict) -> dict:
-    """将 AKShare 财务字段映射为评分引擎所需格式"""
+    """将 AKShare 财务字段映射为评分引擎所需格式
+    
+    AKShare 同花顺财务摘要字段:
+      净资产收益率(%)、净利润同比增长率(%)、营业总收入同比增长率(%)
+      销售毛利率(%)、资产负债率(%)、每股经营现金流、基本每股收益
+    """
+    roe = _parse_value(raw.get('净资产收益率', 0))
+    profit_growth = _parse_value(raw.get('净利润同比增长率', 0))
+    revenue_growth = _parse_value(raw.get('营业总收入同比增长率', 0))
+    gross_margin = _parse_value(raw.get('销售毛利率', 0))
+    debt_ratio = _parse_value(raw.get('资产负债率', 0))
+    ocf = _parse_value(raw.get('每股经营现金流', 0))
+    eps = _parse_value(raw.get('基本每股收益', 0))
+    
     return {
-        'roe': _parse_value(raw.get('净资产收益率', 0)),
-        'profit_growth': _parse_value(raw.get('净利润同比增长率', 0)),
-        'revenue_growth': _parse_value(raw.get('营业总收入同比增长率', 0)),
-        'gross_margin': _parse_value(raw.get('销售毛利率', 0)),
-        'debt_ratio': _parse_value(raw.get('资产负债率', 0)),
-        'operating_cashflow': _parse_value(raw.get('每股经营现金流', 0)),
-        'has_dividend': _parse_value(raw.get('基本每股收益', 0)) > 0,
-        'pe': 0,        # TODO: 需要额外接口
+        'roe': roe,
+        'profit_growth': profit_growth,
+        'revenue_growth': revenue_growth,
+        'gross_margin': gross_margin,
+        'debt_ratio': debt_ratio,
+        'operating_cashflow': ocf,
+        'has_dividend': eps > 0,
+        'pe': 0,
         'pb': 0,
         'pe_percentile': 50,
     }
