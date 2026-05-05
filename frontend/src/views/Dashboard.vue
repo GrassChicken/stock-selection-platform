@@ -51,9 +51,23 @@
 
     <!-- 板块热度 -->
     <div class="section-title">🏷️ 板块热度排行</div>
+    
+    <!-- 主板/创业板/科创板 Tab -->
+    <div class="board-tabs">
+      <span
+        v-for="board in ['main', 'chinext', 'star']"
+        :key="board"
+        :class="['board-tab', { active: activeBoard === board }]"
+        @click="switchBoard(board)"
+      >
+        {{ boardLabels[board] }}
+        <span class="tab-count">({{ (store.boardStats[board] || {}).count || 0 }}只)</span>
+      </span>
+    </div>
+    
     <div class="sector-cards">
       <el-card
-        v-for="sector in store.sectors"
+        v-for="sector in boardSectors"
         :key="sector.name"
         shadow="hover"
         :class="['sector-card', { active: selectedSector === sector.name }]"
@@ -111,10 +125,10 @@
 
     <!-- 底部统计 -->
     <el-row :gutter="16" class="stats-bar">
-      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">A+ 优质</span><span class="stat-value">{{ store.stats?.['A+'] || 0 }}</span></el-card></el-col>
-      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">A 良好</span><span class="stat-value">{{ store.stats?.A || 0 }}</span></el-card></el-col>
-      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">B 一般</span><span class="stat-value">{{ store.stats?.B || 0 }}</span></el-card></el-col>
-      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">C 较弱</span><span class="stat-value">{{ store.stats?.C || 0 }}</span></el-card></el-col>
+      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">A+ 优质</span><span class="stat-value">{{ boardStats['A+'] || 0 }}</span></el-card></el-col>
+      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">A 良好</span><span class="stat-value">{{ boardStats['A'] || 0 }}</span></el-card></el-col>
+      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">B 一般</span><span class="stat-value">{{ boardStats['B'] || 0 }}</span></el-card></el-col>
+      <el-col :span="6"><el-card shadow="never" class="stat-card"><span class="stat-label">C 较弱</span><span class="stat-value">{{ boardStats['C'] || 0 }}</span></el-card></el-col>
     </el-row>
   </div>
 </template>
@@ -125,11 +139,27 @@ import { useDashboardStore } from '../stores/dashboard'
 
 const store = useDashboardStore()
 const selectedSector = ref('')
+const activeBoard = ref('main')  // main | chinext | star
+
+const boardLabels = {
+  main: '主板',
+  chinext: '创业板',
+  star: '科创板',
+}
+
+// 根据选中 board 获取板块数据
+const boardSectors = computed(() => {
+  return store.boardSectors[activeBoard.value] || []
+})
+
+const boardStats = computed(() => {
+  return store.boardStats[activeBoard.value] || {}
+})
 
 // 板块股票列表
 const stockList = computed(() => {
   const allStocks = []
-  for (const sector of store.sectors) {
+  for (const sector of boardSectors.value) {
     if (sector.stocks) {
       sector.stocks.forEach((s, i) => {
         allStocks.push({ rank: i + 1, ...s })
@@ -141,6 +171,10 @@ const stockList = computed(() => {
 
 const triggerAnalysis = () => {
   store.startAnalysis()
+}
+
+const switchBoard = (board) => {
+  activeBoard.value = board
 }
 
 onMounted(() => {
@@ -165,6 +199,15 @@ onMounted(() => {
 .status-card { margin-bottom: 16px; border-radius: 12px; }
 .status-row { display: flex; justify-content: space-between; align-items: center; }
 .section-title { font-size: 18px; font-weight: 600; margin: 20px 0 12px; }
+.board-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.board-tab {
+  padding: 8px 20px; border-radius: 8px; cursor: pointer;
+  background: #f5f7fa; color: #606266; font-size: 14px; font-weight: 500;
+  transition: all 0.2s; user-select: none;
+}
+.board-tab:hover { background: #e8eaf0; }
+.board-tab.active { background: #409eff; color: #fff; }
+.tab-count { font-size: 12px; opacity: 0.8; margin-left: 4px; }
 .sector-cards { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
 .sector-card { min-width: 180px; cursor: pointer; transition: all 0.2s; border-radius: 12px; }
 .sector-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }

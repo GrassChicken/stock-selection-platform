@@ -14,7 +14,9 @@ export const useDashboardStore = defineStore('dashboard', {
     updateTime: '',
     // 板块
     sectors: [],
+    boardSectors: { main: [], chinext: [], star: [] },
     stats: {},
+    boardStats: { main: {}, chinext: {}, star: {} },
     // 分析状态
     analyzing: false,
     progress: 0,
@@ -38,6 +40,16 @@ export const useDashboardStore = defineStore('dashboard', {
         this.updateTime = data.update_time || ''
         this.sectors = data.sectors || []
         this.stats = data.stats || {}
+        this.boardStats = data.stats?.board_stats || { main: {}, chinext: {}, star: {} }
+        // 获取各 board 的板块数据
+        const { getSectors } = await import('../api/sectors')
+        for (const board of ['main', 'chinext', 'star']) {
+          try {
+            this.boardSectors[board] = await getSectors(board)
+          } catch {
+            this.boardSectors[board] = []
+          }
+        }
       } catch (e) {
         console.error('获取大盘数据失败:', e)
       }

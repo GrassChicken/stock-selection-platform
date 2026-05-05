@@ -94,6 +94,24 @@ def _clean(obj):
     return obj
 
 
+def _detect_board(code: str) -> str:
+    """按股票代码判断所属板块"""
+    if not code:
+        return 'other'
+    c = code.strip()
+    if c.startswith('60'):
+        return 'main'       # 沪市主板
+    if c.startswith('00'):
+        return 'main'       # 深市主板
+    if c.startswith('30'):
+        return 'chinext'    # 创业板
+    if c.startswith('68'):
+        return 'star'       # 科创板
+    if c.startswith(('8', '4')):
+        return 'bse'        # 北交所
+    return 'other'
+
+
 def run_full_analysis(progress_callback=None) -> dict:
     """
     完整选股流程
@@ -163,6 +181,7 @@ def run_full_analysis(progress_callback=None) -> dict:
         info = get_stock_basic_info(code)
         industry = info.get('行业', '')
         sector = assign_sector(industry, name)
+        board = _detect_board(code)  # 主板/创业板/科创板
 
         # 评分
         r = grade_stock(
@@ -173,6 +192,7 @@ def run_full_analysis(progress_callback=None) -> dict:
         )
         r['sector'] = sector
         r['industry'] = industry
+        r['board'] = board
         r['price'] = stock['price']
         r['change_pct'] = stock['change_pct']
         r['turnover'] = stock['turnover']
@@ -187,12 +207,19 @@ def run_full_analysis(progress_callback=None) -> dict:
     log('板块分组中...', 85)
 
     # ===== Step 4: 板块分组 =====
-    sectors = group_by_sector(scored, top_n=6, per_sector=10)
+    # 总体分组
+    sectors_all = group_by_sector(scored, top_n=6, per_sector=10)
+    # 分 board 分组
+    sectors_by_board = {}
+    for board_key in ('main', 'chinext', 'star'):
+        board_stocks = [s for s in scored if s.get('board') == board_key]
+        sectors_by_board[board_key] = group_by_sector(board_stocks, top_n=6, per_sector=10)
 
     log('分析完成！', 100)
 
     elapsed = time.time() - t0
 
+    # 总体统计
     stats = {
         'total': total,
         'passed': len(passed),
@@ -202,9 +229,22 @@ def run_full_analysis(progress_callback=None) -> dict:
         'B': sum(1 for s in scored if s['rating'] == 'B'),
         'C': sum(1 for s in scored if s['rating'] == 'C'),
     }
+    # 分 board 统计
+    board_stats = {}
+    for bk in ('main', 'chinext', 'star'):
+        bs = [s for s in scored if s.get('board') == bk]
+        board_stats[bk] = {
+            'count': len(bs),
+            'A+': sum(1 for s in bs if s['rating'] == 'A+'),
+            'A': sum(1 for s in bs if s['rating'] == 'A'),
+            'B': sum(1 for s in bs if s['rating'] == 'B'),
+            'C': sum(1 for s in bs if s['rating'] == 'C'),
+        }
 
     return _clean({
-        'sectors': sectors,
+        'sectors': sectors_all,
+        'sectors_by_board': sectors_by_board,
         'stats': stats,
+        'board_stats': board_stats,
         'elapsed': round(elapsed, 1),
     })

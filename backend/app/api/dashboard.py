@@ -91,7 +91,7 @@ async def get_dashboard():
         result.down_count = snapshot["down_count"]
         result.total_volume = snapshot["total_volume"]
 
-    # 3. 分析结果（板块热度 + 统计）
+    # 3. 分析结果（板块热度 + 统计 + board 统计）
     analysis = _get_latest_analysis_result()
     if analysis and not analysis.get("error"):
         sectors_raw = analysis.get("sectors", [])
@@ -108,7 +108,10 @@ async def get_dashboard():
             }
             for s in sectors_raw
         ]
-        result.stats = analysis.get("stats", {})
+        # 合并 stats + board_stats
+        stats = analysis.get("stats", {})
+        stats["board_stats"] = analysis.get("board_stats", {})
+        result.stats = stats
         result.update_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     return result

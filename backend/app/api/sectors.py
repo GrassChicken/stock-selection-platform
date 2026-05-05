@@ -31,10 +31,19 @@ def _stock_to_score(st: dict) -> StockScore:
 
 
 @router.get("", response_model=List[SectorInfo])
-async def get_sectors():
-    """获取所有板块列表及热度排名（从最新分析结果读取）"""
+async def get_sectors(board: str = ""):
+    """获取所有板块列表及热度排名
+    
+    Args:
+        board: 过滤板块 (main=主板, chinext=创业板, star=科创板)，空=全部
+    """
     analysis = _get_latest_analysis()
     if analysis and not analysis.get('error'):
+        # 按 board 过滤
+        if board in ('main', 'chinext', 'star'):
+            sectors_data = analysis.get('sectors_by_board', {}).get(board, [])
+        else:
+            sectors_data = analysis.get('sectors', [])
         return [
             SectorInfo(
                 name=s.get('name', ''),
@@ -46,10 +55,8 @@ async def get_sectors():
                 stock_count=len(s.get('stocks', [])),
                 stocks=[_stock_to_score(st) for st in s.get('stocks', [])],
             )
-            for s in analysis.get('sectors', [])
+            for s in sectors_data
         ]
-
-    # 分析尚未完成，返回空
     return []
 
 
