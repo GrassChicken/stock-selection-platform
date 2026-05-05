@@ -25,7 +25,7 @@ def _refresh_market_snapshot():
                 "up_count": int((df["涨跌幅"] > 0).sum()),
                 "down_count": int((df["涨跌幅"] < 0).sum()),
                 "flat_count": int((df["涨跌幅"] == 0).sum()),
-                "total_volume": round(df["成交额"].sum() / 1e8, 2),
+                "total_volume": round(df["成交额"].sum() / 1e12, 2),  # 万亿
             }
             _market_cache["ts"] = time.time()
             print(f"📊 行情快照已更新: 涨{_market_cache['data']['up_count']} 跌{_market_cache['data']['down_count']} 成交额{_market_cache['data']['total_volume']}亿")
