@@ -148,7 +148,7 @@
       </el-table>
 
       <div class="stock-cards-mobile">
-        <div v-for="stock in stockList" :key="stock.code" class="stock-card-mobile">
+        <div v-for="stock in stockList" :key="stock.code" class="stock-card-mobile" @click="viewDetail(stock)">
           <div class="stock-header">
             <span :class="['stock-rank', `rank-${stock.rank}`]">{{ stock.rank }}</span>
             <span class="stock-code">{{ stock.code }}</span>
@@ -167,6 +167,7 @@
             </div>
             <div class="stock-score"><el-tag :type="stock.rating === 'A+' ? 'danger' : stock.rating === 'A' ? 'warning' : 'info'" size="small" effect="dark">{{ stock.total_score }}分 {{ stock.rating }}</el-tag></div>
           </div>
+          <div class="stock-detail-link"><el-icon><ArrowRight /></el-icon> 查看详情</div>
         </div>
         <div v-if="stockList.length === 0" class="empty-tip"><el-icon :size="48" color="#c0c4cc"><Document /></el-icon><p>暂无股票数据</p></div>
       </div>
@@ -220,7 +221,8 @@ import { useDashboardStore } from '../stores/dashboard'
 import {
   TrendCharts, Histogram, DataLine, Sort, Top, Bottom,
   Coin, Clock, Refresh, StarFilled, Sunny, Document, List,
-  OfficeBuilding, Cpu, Monitor, Trophy, Medal, Collection, Files
+  OfficeBuilding, Cpu, Monitor, Trophy, Medal, Collection, Files,
+  ArrowRight
 } from '@element-plus/icons-vue'
 
 const store = useDashboardStore()
@@ -366,7 +368,7 @@ onMounted(() => store.fetchDashboard())
   .sector-cards { flex-direction: column; overflow-x: visible; gap: 8px; } .sector-card { min-width: 100%; }
   .sector-heat { margin-bottom: 6px; } .sector-name { font-size: 14px; } .heat-value { font-size: 18px; }
   .stock-table { display: none; } .stock-cards-mobile { display: block; }
-  .stock-card-mobile { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+  .stock-detail-link { text-align: center; color: #409eff; font-size: 12px; margin-top: 8px; padding: 4px 0; display: flex; align-items: center; justify-content: center; gap: 4px; }
   .stock-card-mobile:active { background: #fafafa; } .stock-card-mobile:last-child { border-bottom: none; }
   .stock-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .stock-meta { margin-bottom: 6px; }
