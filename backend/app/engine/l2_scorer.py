@@ -249,7 +249,9 @@ def grade_stock(code: str, name: str, fund_data: dict, kline: pd.DataFrame,
     ts, td, ti = score_technical(kline)
     cs, cd = score_capital(cap_data)
 
-    total = fs * 0.5 + ts * 0.3 + cs * 0.2
+    # 三项分数已经按权重分配了分值（基本面满分50 + 技术面满分30 + 资金面满分20 = 100）
+    # 直接相加即可，不需要再乘权重！
+    total = fs + ts + cs
 
     if total >= 80: rating = 'A+'
     elif total >= 65: rating = 'A'

@@ -65,8 +65,8 @@ def _map_fund(raw: dict) -> dict:
     
     result = {}
     result['roe'] = _parse_val(raw.get('净资产收益率', 0)) * annualize
-    result['profit_growth'] = _parse_val(raw.get('净利润同比增长率', 0))
-    result['revenue_growth'] = _parse_val(raw.get('营业总收入同比增长率', 0))
+    result['profit_growth'] = _parse_val(raw.get('净利润同比增长率', 0)) * annualize
+    result['revenue_growth'] = _parse_val(raw.get('营业总收入同比增长率', 0)) * annualize
     result['gross_margin'] = _parse_val(raw.get('销售毛利率', 0))
     result['debt_ratio'] = _parse_val(raw.get('资产负债率', 0))
     result['operating_cashflow'] = _parse_val(raw.get('每股经营现金流', 0)) * annualize
