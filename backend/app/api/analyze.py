@@ -71,6 +71,40 @@ async def get_latest_result():
     return {"message": "尚未执行分析"}
 
 
+@router.get("/search")
+async def search_stocks(q: str = ""):
+    """搜索股票（代码/名称），从最新分析结果中查找"""
+    if not q or len(q) < 1:
+        return []
+    global _latest_result
+    if not _latest_result:
+        return []
+    q = q.lower().strip()
+    results = []
+    seen = set()
+    for sector in _latest_result.get('sectors', []):
+        for st in sector.get('stocks', []):
+            code = str(st.get('code', ''))
+            name = str(st.get('name', ''))
+            key = code
+            if key in seen: continue
+            if q in code.lower() or q in name.lower():
+                seen.add(key)
+                results.append({
+                    'code': code, 'name': name,
+                    'price': st.get('price', 0),
+                    'change_pct': st.get('change_pct', 0),
+                    'total_score': st.get('total_score', 0),
+                    'rating': st.get('rating', 'C'),
+                    'sector': sector.get('name', ''),
+                    'board': st.get('board', ''),
+                })
+            if len(results) >= 20:
+                break
+        if len(results) >= 20: break
+    return results
+
+
 @router.post("/ai/{code}")
 async def ai_analyze_stock(code: str):
     """调用 LLM 生成个股深度报告"""
