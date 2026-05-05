@@ -1,6 +1,6 @@
 """数据模型 - Pydantic schemas"""
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 
 
@@ -18,7 +18,6 @@ class StockScore(BaseModel):
     name: str
     price: float = 0
     change_pct: float = 0
-    # 基本面
     pe: float = 0
     pb: float = 0
     roe: float = 0
@@ -29,19 +28,58 @@ class StockScore(BaseModel):
     operating_cashflow: float = 0
     has_dividend: bool = False
     fundamental_score: float = 0
-    # 技术面
     ma_bullish: bool = False
     macd_golden_cross: bool = False
     rsi: float = 50
     vol_ratio: float = 1.0
     price_above_ma20: bool = False
     technical_score: float = 0
-    # 资金面
     net_inflow_5d: float = 0
     margin_balance_up: bool = False
     rating_buy_ratio: float = 0
     capital_score: float = 0
-    # 总分
+    total_score: float = 0
+    rating: str = "C"
+
+
+class StockDetail(BaseModel):
+    """个股详情（基本信息+评分明细）"""
+    code: str
+    name: str
+    price: float = 0
+    change_pct: float = 0
+    industry: str = ""
+    total_market_cap: float = 0
+    float_market_cap: float = 0
+    pe: float = 0
+    pb: float = 0
+    roe: float = 0
+    gross_margin: float = 0
+    debt_ratio: float = 0
+    profit_growth: float = 0
+    revenue_growth: float = 0
+    operating_cashflow: float = 0
+    has_dividend: bool = False
+    fundamental_score: float = 0
+    fundamental_details: dict = {}
+    ma5: float = 0
+    ma10: float = 0
+    ma20: float = 0
+    ma60: float = 0
+    ma_bullish: bool = False
+    macd_dif: float = 0
+    macd_dea: float = 0
+    macd_golden: bool = False
+    rsi: float = 50
+    vol_ratio: float = 1.0
+    price_above_ma20: bool = False
+    technical_score: float = 0
+    technical_details: dict = {}
+    net_inflow_5d: float = 0
+    margin_balance_up: bool = False
+    rating_buy_ratio: float = 0
+    capital_score: float = 0
+    capital_details: dict = {}
     total_score: float = 0
     rating: str = "C"
 
@@ -85,8 +123,8 @@ class DashboardData(BaseModel):
 class AnalysisTask(BaseModel):
     """分析任务"""
     task_id: str
-    trigger: str = "manual"  # manual / scheduled
-    status: str = "pending"  # pending / running / completed / failed
+    trigger: str = "manual"
+    status: str = "pending"
     progress: float = 0
     current_step: str = ""
     total_steps: int = 3
@@ -100,12 +138,12 @@ class ScheduleConfig(BaseModel):
     enabled: bool = True
     hour: int = 16
     minute: int = 0
-    weekdays: List[int] = [0, 1, 2, 3, 4]  # 周一到周五
+    weekdays: List[int] = [0, 1, 2, 3, 4]
     notify_feishu: bool = True
 
 
 class ScoringWeights(BaseModel):
-    """评分权重配置（总和需=100）"""
+    """评分权重配置"""
     fundamental: float = 50.0
     technical: float = 30.0
     capital: float = 20.0

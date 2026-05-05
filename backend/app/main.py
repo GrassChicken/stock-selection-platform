@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 import os
 
 from app.config import get_settings
-from app.api import dashboard, sectors, stocks, analyze, schedule, settings
+from app.api import dashboard, sectors, stocks, analyze, schedule, settings, stock_detail
 from app.scheduler import init_scheduler, shutdown_scheduler
 
 
@@ -45,6 +45,7 @@ app.include_router(stocks.router, prefix="/api/stocks", tags=["个股"])
 app.include_router(analyze.router, prefix="/api/analyze", tags=["分析控制"])
 app.include_router(schedule.router, prefix="/api/schedule", tags=["定时任务"])
 app.include_router(settings.router, prefix="/api/settings", tags=["系统设置"])
+app.include_router(stock_detail.router, prefix="/api/stock", tags=["个股详情"])
 
 
 @app.get("/api/health", tags=["健康检查"])

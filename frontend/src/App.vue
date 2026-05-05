@@ -48,9 +48,11 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { Search } from '@element-plus/icons-vue'
 import { searchStocks } from './api/analyze'
-import { ElMessage } from 'element-plus'
+
+const router = useRouter()
 
 const searchText = ref('')
 const searchResults = ref([])
@@ -76,9 +78,9 @@ const onSearchInput = () => {
 
 const selectStock = (item) => {
   showDropdown.value = false
-  ElMessage.info(`${item.code} ${item.name} — 评分${item.total_score} ${item.rating}（个股详情开发中）`)
   searchText.value = ''
   searchResults.value = []
+  router.push({ name: 'StockDetail', params: { code: item.code } })
 }
 
 const handleClickOutside = (e) => {
