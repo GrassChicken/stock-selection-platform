@@ -70,6 +70,7 @@
         <div class="status-info">
           <el-icon :size="16" class="status-icon"><Clock /></el-icon>
           <span>最近分析: {{ store.updateTime || '尚未分析' }}</span>
+          <span v-if="store.elapsed" class="elapsed-badge">耗时 <el-tag size="small" type="warning" effect="dark">{{ store.elapsed }}s</el-tag></span>
         </div>
         <el-button type="primary" @click="triggerAnalysis" :loading="store.analyzing" class="analyze-btn">
           <el-icon v-if="!store.analyzing" :size="16"><Refresh /></el-icon>
@@ -213,6 +214,7 @@ export default {
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { ElMessageBox } from 'element-plus'
 import { useDashboardStore } from '../stores/dashboard'
 import {
   TrendCharts, Histogram, DataLine, Sort, Top, Bottom,
@@ -257,7 +259,23 @@ const stockList = computed(() => {
   return r
 })
 const tableRowClassName = ({ rowIndex }) => rowIndex < 3 ? 'top-row' : ''
-const triggerAnalysis = () => store.startAnalysis()
+const triggerAnalysis = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '全量分析将遍历 A 股 5000+ 只股票，预计耗时 <b>3~5 分钟</b>。确定开始？',
+      '⚠️ 确认分析',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        dangerouslyUseHTMLString: true,
+        type: 'info',
+      }
+    )
+    store.startAnalysis()
+  } catch {
+    // 用户取消
+  }
+}
 const switchBoard = (b) => { activeBoard.value = b }
 onMounted(() => store.fetchDashboard())
 </script>
@@ -285,7 +303,8 @@ onMounted(() => store.fetchDashboard())
 
 .status-card { margin-bottom: 16px; border-radius: 12px; }
 .status-row { display: flex; justify-content: space-between; align-items: center; }
-.status-info { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.status-info { font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.elapsed-badge { margin-left: 8px; }
 .status-icon { color: #409eff; }
 .analyze-btn { min-width: 120px; }
 .progress-text { font-size: 12px; color: #606266; }

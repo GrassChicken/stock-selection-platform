@@ -12,6 +12,7 @@ export const useDashboardStore = defineStore('dashboard', {
     cyIndex: 0, cyChange: 0,
     upCount: 0, downCount: 0, totalVolume: 0,
     updateTime: '',
+    elapsed: 0, // 上次分析耗时(秒)
     // 板块
     sectors: [],
     boardSectors: { main: [], chinext: [], star: [] },
@@ -41,6 +42,11 @@ export const useDashboardStore = defineStore('dashboard', {
         this.sectors = data.sectors || []
         this.stats = data.stats || {}
         this.boardStats = data.stats?.board_stats || { main: {}, chinext: {}, star: {} }
+        // 获取分析耗时
+        try {
+          const latest = await getLatestResult()
+          if (latest && latest.elapsed) this.elapsed = Math.round(latest.elapsed)
+        } catch {}
         // 获取各 board 的板块数据
         const { getSectors } = await import('../api/sectors')
         for (const board of ['main', 'chinext', 'star']) {
