@@ -90,7 +90,7 @@ def run_daily_analysis():
         try:
             from app.engine.pipeline import run_full_analysis
             t0 = datetime.now()
-            result = run_full_analysis()
+            result = run_full_analysis(sample_size=500)
             elapsed = (datetime.now() - t0).total_seconds()
 
             # 存储到 analyze 模块缓存
